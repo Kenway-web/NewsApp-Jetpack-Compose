@@ -2,7 +2,7 @@
 # News APP-Jetpack Compose
 News App built on Clean architecture, MVVM, and Jetpack Compose, utilizing Material 3 design guidelines along with best practices. The app incorporates API calling and categorizes news into various sections with pager slider row sections.
 
-![HomePge](NewsApp-Jetpack-Compose/app/src/main/res/drawable
+![HomePage](app/src/main/res/drawable
 /ss1.png
 )
 
