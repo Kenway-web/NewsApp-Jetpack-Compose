@@ -14,6 +14,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,6 +34,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.music.newsapp.domain.model.Article
+import com.music.newsapp.presentation.component.BottomSheetComponent
 import com.music.newsapp.presentation.component.CategoryTabRow
 import com.music.newsapp.presentation.component.NewsArticleCard
 import com.music.newsapp.presentation.component.NewsScreenTopBar
@@ -45,7 +47,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun NewsScreen(
     state: NewsScreenState,
-    onEvent:(NewsScreenEvent) -> Unit
+    onEvent:(NewsScreenEvent) -> Unit,
+    onReadFullStoryButtonClicked:(String) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     val pagerState = rememberPagerState()
@@ -56,6 +59,27 @@ fun NewsScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var shouldBottomSheetShow by remember { mutableStateOf(false) }
+
+
+    if (shouldBottomSheetShow) {
+        ModalBottomSheet(
+            onDismissRequest = { shouldBottomSheetShow = false },
+            sheetState = sheetState,
+            content = {
+                state.selectedArticle?.let {
+                    BottomSheetComponent(
+                        article = it,
+                        onReadFullStoryButtonClicked = {
+                            onReadFullStoryButtonClicked(it.url)
+                            coroutineScope.launch { sheetState.hide() }.invokeOnCompletion {
+                                if (!sheetState.isVisible) shouldBottomSheetShow = false
+                            }
+                        }
+                    )
+                }
+            }
+        )
+    }
 
     LaunchedEffect(key1 = pagerState)
     {
@@ -96,7 +120,10 @@ fun NewsScreen(
             ) {
                  NewsArticleList(
                      state = state,
-                     onCardClicked = {},
+                     onCardClicked = { article->
+                         shouldBottomSheetShow=true
+                         onEvent(NewsScreenEvent.OnNewsCardClicked(article=article))
+                     },
                      onRetry = {
                          onEvent(NewsScreenEvent.OnCategoryChanged(state.category))
                      }
