@@ -3,6 +3,8 @@
 News App built on Clean architecture, MVVM, and Jetpack Compose, utilizing Material 3 design guidelines along with best practices. The app incorporates API calling and categorizes news into various sections with pager slider row sections.
 
 ![HomePage](https://github.com/Kenway-web/NewsApp-Jetpack-Compose/blob/main/app/src/main/res/drawable/ss1.png)
+![Search Page](https://github.com/Kenway-web/NewsApp-Jetpack-Compose/blob/main/app/src/main/res/drawable/Screenshot%202023-12-16%20at%202.24.28%20PM.png)
+
 
 
 ## License
