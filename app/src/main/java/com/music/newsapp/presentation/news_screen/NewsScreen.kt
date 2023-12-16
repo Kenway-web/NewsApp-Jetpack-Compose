@@ -1,5 +1,6 @@
 package com.music.newsapp.presentation.news_screen
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,8 +30,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.music.newsapp.domain.model.Article
@@ -39,11 +45,15 @@ import com.music.newsapp.presentation.component.CategoryTabRow
 import com.music.newsapp.presentation.component.NewsArticleCard
 import com.music.newsapp.presentation.component.NewsScreenTopBar
 import com.music.newsapp.presentation.component.RetryContent
+import com.music.newsapp.presentation.component.SearchAppBar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalComposeUiApi::class
+)
 @Composable
 fun NewsScreen(
     state: NewsScreenState,
@@ -59,6 +69,14 @@ fun NewsScreen(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var shouldBottomSheetShow by remember { mutableStateOf(false) }
+
+
+    // helps in focusing text field
+    val focusRequester = remember{
+        FocusRequester()
+    }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
 
     if (shouldBottomSheetShow) {
@@ -90,46 +108,91 @@ fun NewsScreen(
     // snapshotFlow { pagerState.currentPage } creates a Flow of the current page snapshot.
     //This means that the flow will only emit a new value whenever the current page changes.
 
-
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            NewsScreenTopBar(
-                scrollBehavior = scrollBehavior,
-                onSearchIconClicked = {}
-            )
-        },
-    )
-    { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-
-            CategoryTabRow(
-                pagerState = pagerState,
-                categories = categories,
-                onTabSelected = { index ->
-                    coroutineScope.launch { pagerState.animateScrollToPage(index) }
-                })
-
-            HorizontalPager(
-                pageCount = categories.size,
-                state = pagerState
-            ) {
-                 NewsArticleList(
-                     state = state,
-                     onCardClicked = { article->
-                         shouldBottomSheetShow=true
-                         onEvent(NewsScreenEvent.OnNewsCardClicked(article=article))
-                     },
-                     onRetry = {
-                         onEvent(NewsScreenEvent.OnCategoryChanged(state.category))
-                     }
-                 )
-            }
+    LaunchedEffect(key1 = Unit){
+        if(state.searchQuery.isNotEmpty()){
+            onEvent(NewsScreenEvent.OnSearchQueryChanged(searchQuery = state.searchQuery))
         }
+    }
+
+
+
+    Column(modifier = Modifier.fillMaxSize()) {
+            Crossfade(targetState = state.isSearchBarVisible) {isVisible->
+                if(isVisible){
+                    Column {
+                        SearchAppBar(
+                            modifier=Modifier.focusRequester(focusRequester),
+                            value = state.searchQuery,
+                            onValueChange = {newValue->
+                                onEvent(NewsScreenEvent.OnSearchQueryChanged(newValue))
+                            },
+                            onCloseIconClicked = { onEvent(NewsScreenEvent.OnClosedIconClicked) },
+                            onSearchClicked = {
+                                keyboardController?.hide()
+                                focusManager.clearFocus()
+                            }
+                        )
+                        NewsArticleList(
+                            state = state,
+                            onCardClicked = { article->
+                                shouldBottomSheetShow=true
+                                onEvent(NewsScreenEvent.OnNewsCardClicked(article=article))
+                            },
+                            onRetry = {
+                                onEvent(NewsScreenEvent.OnCategoryChanged(state.category))
+                            }
+                        )
+                    }
+                }
+                else{
+                    Scaffold(
+                        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+                        topBar = {
+                            NewsScreenTopBar(
+                                scrollBehavior = scrollBehavior,
+                                onSearchIconClicked = {
+                                   coroutineScope.launch {
+                                       delay(500)
+                                       focusRequester.requestFocus()
+                                   }
+                                    onEvent(NewsScreenEvent.OnSearchIconClicked)
+                                }
+                            )
+                        },
+                    )
+                    { padding ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(padding)
+                        ) {
+
+                            CategoryTabRow(
+                                pagerState = pagerState,
+                                categories = categories,
+                                onTabSelected = { index ->
+                                    coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                                })
+
+                            HorizontalPager(
+                                pageCount = categories.size,
+                                state = pagerState
+                            ) {
+                                NewsArticleList(
+                                    state = state,
+                                    onCardClicked = { article->
+                                        shouldBottomSheetShow=true
+                                        onEvent(NewsScreenEvent.OnNewsCardClicked(article=article))
+                                    },
+                                    onRetry = {
+                                        onEvent(NewsScreenEvent.OnCategoryChanged(state.category))
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
     }
 
 }

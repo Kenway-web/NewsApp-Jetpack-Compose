@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.music.newsapp.domain.model.Article
+import com.music.newsapp.util.dateFormatter
 
 
 @Composable
@@ -25,6 +26,7 @@ fun NewsArticleCard(
     onCardClicked:(Article) ->Unit
 )
 {
+    val date = dateFormatter(article.publishedAt)
         Card (
            modifier=modifier.clickable { onCardClicked(article) }
         )
@@ -51,7 +53,7 @@ fun NewsArticleCard(
                        )
 
                         Text(
-                            text=article.publishedAt?:"",
+                            text=date,
                             style = MaterialTheme.typography.bodySmall,
                         )
 
