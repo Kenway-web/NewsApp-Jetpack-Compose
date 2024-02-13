@@ -6,8 +6,6 @@ News App built on Clean architecture, MVVM, and Jetpack Compose, utilizing Mater
 
 <br /> <!-- This creates space -->
 
-<img src="https://github.com/Kenway-web/NewsApp-Jetpack-Compose/blob/main/app/src/main/res/drawable/Screenshot%202023-12-16%20at%202.24.28%20PM.png" width="250" height="400" />
-
 
 
 ## License
